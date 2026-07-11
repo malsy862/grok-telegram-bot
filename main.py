@@ -1,9 +1,10 @@
 import asyncio
 import os
+import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-import requests
 
+# Ambil token dari Railway
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROK_KEY = os.getenv("GROK_API_KEY")
 
@@ -16,27 +17,41 @@ async def start(message: types.Message):
 
 @dp.message(Command("help"))
 async def help_cmd(message: types.Message):
-    await message.answer("/start - Mulai\n/help - Bantuan")
+    await message.answer("Kirim pesan apa saja, aku akan balas pakai Grok.")
 
 @dp.message()
 async def chat(message: types.Message):
+    if not GROK_KEY:
+        return await message.answer("❌ API Key Grok belum diatur di Railway.")
+
     try:
         resp = requests.post(
             "https://api.x.ai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROK_KEY}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {GROK_KEY}",
+                "Content-Type": "application/json"
+            },
             json={
-                "model": "grok-beta",
+                "model": "grok-beta",      # Model yang paling stabil
                 "messages": [{"role": "user", "content": message.text}],
-                "temperature": 0.7
+                "temperature": 0.7,
+                "max_tokens": 1500
             },
             timeout=60
         )
-        answer = resp.json()["choices"][0]["message"]["content"]
+        
+        resp.raise_for_status()
+        data = resp.json()
+        answer = data["choices"][0]["message"]["content"]
+        
         await message.answer(answer)
-    except:
-        await message.answer("❌ Error, coba lagi.")
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")   # Muncul di Railway Logs
+        await message.answer("❌ Error, coba lagi nanti.")
 
 async def main():
+    print("✅ Bot Grok berhasil dijalankan!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
