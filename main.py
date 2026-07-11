@@ -25,7 +25,7 @@ async def chat(message: types.Message):
             "https://api.x.ai/v1/chat/completions",
             headers={"Authorization": f"Bearer {GROK_KEY}", "Content-Type": "application/json"},
             json={
-                "model": "grok-4",
+                "model": "grok-beta",
                 "messages": [{"role": "user", "content": message.text}],
                 "temperature": 0.7
             },
